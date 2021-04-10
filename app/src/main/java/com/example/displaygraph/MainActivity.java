@@ -78,7 +78,6 @@ public class MainActivity extends AppCompatActivity {
             }
             series = new LineGraphSeries<>(getData());
             graph.addSeries(series);
-
             startTimer(random);
         }
         protected void startTimer(Random random) {
@@ -93,9 +92,38 @@ public class MainActivity extends AppCompatActivity {
         public Handler mHandler = new Handler() {
             public void handleMessage(Message msg) {
                 Toast.makeText(MainActivity.this, "Data Added to the graph", Toast.LENGTH_SHORT).show();
+                readExcelFile();
                 addToGraph();
             }
         };
+        public void readExcelFile() {
+            try {
+                InputStream myInput;
+                AssetManager assetManager = getAssets();
+                myInput = assetManager.open("mockdata.xls");
+                POIFSFileSystem myFileSystem = new POIFSFileSystem(myInput);
+                HSSFWorkbook myWorkBook = new HSSFWorkbook(myFileSystem);
+                HSSFSheet mySheet = myWorkBook.getSheetAt(0);
+                Iterator<Row> rowIter = mySheet.rowIterator();
+                while (rowIter.hasNext()) {
+                    HSSFRow myRow = (HSSFRow) rowIter.next();
+                    Iterator<Cell> cellIter = myRow.cellIterator();
+                    int colno =0;
+                    String x="";
+                    while (cellIter.hasNext()) {
+                        HSSFCell myCell = (HSSFCell) cellIter.next();
+                        if (colno==0){
+                            x = myCell.toString();
+                        }
+                        colno++;
+                    }
+                    this.dataPoints.add(new DataPoint(this.x++,Double.parseDouble(x.trim())));
+                }
+                addToGraph();
+            } catch (Exception e) {
+                Log.e(TAG, "error "+ e.toString());
+            }
+        }
 
 
         static class SortDataPoint implements Comparator<DataPoint>{
@@ -118,7 +146,7 @@ public class MainActivity extends AppCompatActivity {
         }
 
         private void addToGraph(){
-            graph.getViewport().setMaxX(dataPoints.size());
+            graph.getViewport().setMaxX(dataPoints.size()+10);
             series.resetData(getData());
         }
 
